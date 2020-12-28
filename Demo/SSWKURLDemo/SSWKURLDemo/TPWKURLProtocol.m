@@ -3,7 +3,7 @@
 //  trustpocket
 //
 //  Created by sgcy on 2020/4/21.
-//  Copyright © 2020 com.pingan.trust. All rights reserved.
+//  Copyright © 2020 sgcy. All rights reserved.
 //
 
 #import "TPWKURLProtocol.h"
@@ -53,9 +53,7 @@
     
     if (request.HTTPBody.length > 0) {
         NSDictionary *headers = @{
-                                  @"X-TCloud-Authorization": @"customize",
-                                  @"X-TCloud-Auth-Type":@"customize",
-                                  @"X-TCloud-Auth-Namespace":@"customize"
+                                  @"customize": @"customize",
                                   };
         [headers enumerateKeysAndObjectsUsingBlock:^(NSString *_Nonnull key, NSString *_Nonnull obj, BOOL * _Nonnull stop) {
             [mutableRequest setValue:obj forHTTPHeaderField:key];
@@ -86,6 +84,7 @@
     }];
     self.dataTask = task;
     [task resume];
+
 }
 
 - (void)stopLoading
@@ -100,8 +99,8 @@
     
     NSLog(@"[URL]:%@",self.request.URL.absoluteString);
     NSLog(@"[HEADERS]:%@",self.request.allHTTPHeaderFields);
-//    NSLog(@"[BODY]:%@",self.request.HTTPBody);
-//    NSLog(@"[RESPONSE]:%@",self.response);
+    NSLog(@"[BODY]:%@",self.request.HTTPBody);
+    NSLog(@"[RESPONSE]:%@",self.response);
 
 
 }

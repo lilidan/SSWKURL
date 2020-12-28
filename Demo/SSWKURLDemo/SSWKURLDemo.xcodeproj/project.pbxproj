@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D63A18B02578D1E600D8FD5E /* event.js in Resources */ = {isa = PBXBuildFile; fileRef = D63A18AF2578D1E600D8FD5E /* event.js */; };
 		D645EE3A24690218001F70E8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D645EE3924690218001F70E8 /* AppDelegate.m */; };
 		D645EE3D24690218001F70E8 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D645EE3C24690218001F70E8 /* SceneDelegate.m */; };
 		D645EE4024690218001F70E8 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D645EE3F24690218001F70E8 /* ViewController.m */; };
@@ -19,6 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D63A18AF2578D1E600D8FD5E /* event.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = event.js; sourceTree = "<group>"; };
 		D645EE3524690218001F70E8 /* SSWKURLDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SSWKURLDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D645EE3824690218001F70E8 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		D645EE3924690218001F70E8 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -67,6 +69,7 @@
 		D645EE3724690218001F70E8 /* SSWKURLDemo */ = {
 			isa = PBXGroup;
 			children = (
+				D63A18AF2578D1E600D8FD5E /* event.js */,
 				D645EE71246922F7001F70E8 /* TPWKURLProtocol.h */,
 				D645EE70246922F7001F70E8 /* TPWKURLProtocol.m */,
 				D645EE6C246903F2001F70E8 /* SSWKURL */,
@@ -153,6 +156,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D645EE482469021C001F70E8 /* LaunchScreen.storyboard in Resources */,
+				D63A18B02578D1E600D8FD5E /* event.js in Resources */,
 				D645EE452469021C001F70E8 /* Assets.xcassets in Resources */,
 				D645EE4324690218001F70E8 /* Main.storyboard in Resources */,
 			);
@@ -311,7 +315,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = Y8LPUY7F34;
+				DEVELOPMENT_TEAM = 76Q3S5QZHK;
 				INFOPLIST_FILE = SSWKURLDemo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -328,7 +332,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = Y8LPUY7F34;
+				DEVELOPMENT_TEAM = 76Q3S5QZHK;
 				INFOPLIST_FILE = SSWKURLDemo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

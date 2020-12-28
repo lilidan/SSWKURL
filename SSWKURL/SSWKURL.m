@@ -137,7 +137,6 @@ static SSWKURLHandler *sharedInstance = nil;
     NSMutableURLRequest *mutaRequest = [request mutableCopy];
     [mutaRequest setValue:[self getRequestCookieHeaderForURL:request.URL] forHTTPHeaderField:@"Cookie"];
     request = [mutaRequest copy];
-    
     BOOL canInit = NO;
     if ([self.protocolClass respondsToSelector:@selector(canInitWithRequest:)]) {
         canInit = [self.protocolClass canInitWithRequest:urlSchemeTask.request];
@@ -199,6 +198,9 @@ static SSWKURLHandler *sharedInstance = nil;
 
 - (NSArray<NSHTTPCookie *> *)handleHeaderFields:(NSDictionary *)headerFields forURL:(NSURL *)URL {
     NSArray *cookieArray = [NSHTTPCookie cookiesWithResponseHeaderFields:headerFields forURL:URL];
+    if (cookieArray.count == 0) {
+        return cookieArray;
+    }
     if (cookieArray != nil) {
         NSHTTPCookieStorage *cookieStorage = [NSHTTPCookieStorage sharedHTTPCookieStorage];
         for (NSHTTPCookie *cookie in cookieArray) {
