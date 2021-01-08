@@ -9,8 +9,26 @@
 #import "SSWKURL.h"
 #import <objc/runtime.h>
 
-typedef BOOL (^HTTPDNSCookieFilter)(NSHTTPCookie *, NSURL *);
 
+
+@interface WKWebView(handlesURLScheme)
+
+
+@end
+
+@implementation WKWebView(handlesURLScheme)
+
+
++ (BOOL)handlesURLScheme:(NSString *)urlScheme
+{
+    return NO;
+}
+
+@end
+
+#pragma mark -
+
+typedef BOOL (^HTTPDNSCookieFilter)(NSHTTPCookie *, NSURL *);
 
 @interface NSURLRequest(requestId)
 
@@ -44,25 +62,58 @@ static char *kNSURLRequestSSTOPKEY = "kNSURLRequestSSTOPKEY";
     return [NSString stringWithFormat:@"%@---%@",self.URL.absoluteString,self.HTTPMethod];
 }
 
-@end
-
-
-@interface WKWebView(handlesURLScheme)
-
-
-@end
-
-@implementation WKWebView(handlesURLScheme)
-
-
-+ (BOOL)handlesURLScheme:(NSString *)urlScheme
-{
-    return NO;
++ (BOOL)allowsAnyHTTPSCertificateForHost:(NSString *)host {
+    return YES;
 }
 
++ (void)setAllowsAnyHTTPSCertificate:(BOOL)allow forHost:(NSString *)host {
+    
+}
+
+
+@end
+
+#pragma mark -
+
+@interface SSWKTaskDelegate : NSObject <NSURLSessionTaskDelegate, NSURLSessionDataDelegate, NSURLSessionDownloadDelegate>
+
+@property (nonatomic,weak) id<WKURLSchemeTask> schemeTask;
+
+@end
+
+@implementation SSWKTaskDelegate
+
+- (void)URLSession:(NSURLSession *)session
+              task:(NSURLSessionTask *)task
+didCompleteWithError:(NSError *)error
+{
+    if (error) {
+        [self.schemeTask didFailWithError:error];
+    }else{
+        [self.schemeTask didFinish];
+    }
+}
+
+- (void)URLSession:(NSURLSession *)session
+      dataTask:(NSURLSessionDataTask *)dataTask
+didReceiveData:(NSData *)data
+{
+    [self.schemeTask didReceiveData:data];
+}
+
+
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
+didReceiveResponse:(NSURLResponse *)response
+ completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler;
+{
+    [self.schemeTask didReceiveResponse:response];
+}
+
+
 @end
 
 
+#pragma mark -
 
 @interface SSWKURLProtocol()
 
@@ -77,12 +128,15 @@ static char *kNSURLRequestSSTOPKEY = "kNSURLRequestSSTOPKEY";
 
 
 
-@interface SSWKURLHandler:NSObject <WKURLSchemeHandler>
+@interface SSWKURLHandler:NSObject <WKURLSchemeHandler,NSURLSessionDelegate>
 
 @property (nonatomic,strong) Class protocolClass;
 @property (nonatomic,strong) NSURLSession *session;
-//@property (nonatomic,strong) NSLock *lock;
 @property (nonatomic,strong) dispatch_queue_t queue;
+
+@property (readwrite, nonatomic, strong) NSOperationQueue *operationQueue;
+@property (readwrite, nonatomic, strong) NSMutableDictionary *mutableTaskDelegatesKeyedByTaskIdentifier;
+@property (readwrite, nonatomic, strong) NSLock *lock;
 
 @end
 
@@ -107,13 +161,25 @@ static SSWKURLHandler *sharedInstance = nil;
     return sharedInstance;
 }
 
+- (instancetype)init
+{
+    if (self = [super init]) {
+        self.lock = [[NSLock alloc] init];
+        self.operationQueue = [[NSOperationQueue alloc] init];
+        self.operationQueue.maxConcurrentOperationCount = 1;
+        self.mutableTaskDelegatesKeyedByTaskIdentifier = [[NSMutableDictionary alloc] init];
+        [NSURLRequest setAllowsAnyHTTPSCertificate:YES forHost:@"https"];
+
+    }
+    return self;
+}
 
 
 - (NSURLSession *)session
 {
     if (!_session) {
         NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-        _session = [NSURLSession sessionWithConfiguration:config];
+        _session = [NSURLSession sessionWithConfiguration:config delegate:self delegateQueue:self.operationQueue];
     }
     return _session;
 }
@@ -165,26 +231,31 @@ static SSWKURLHandler *sharedInstance = nil;
             }];
         }
     }else{
-        NSURLSessionTask *task = [self.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-            
-            dispatch_async(self.queue, ^{
-                if (urlSchemeTask.request.ss_stop == NO) {
-                    if (error) {
-                        [urlSchemeTask didReceiveResponse:response];
-                        [urlSchemeTask didFailWithError:error];
-                    }else{
-                        [urlSchemeTask didReceiveResponse:response];
-                        [urlSchemeTask didReceiveData:data];
-                        [urlSchemeTask didFinish];
-                        if ([response respondsToSelector:@selector(allHeaderFields)]) {
-                            [self handleHeaderFields:[(NSHTTPURLResponse *)response allHeaderFields] forURL:request.URL];
-                        }
-                    }
-                }
-            });
-          
-        }];
+        NSURLSessionTask *task = [self.session dataTaskWithRequest:request];
+        SSWKTaskDelegate *delegate = [[SSWKTaskDelegate alloc] init];
+        delegate.schemeTask = urlSchemeTask;
+        [self setDelegate:delegate forTask:task];
         [task resume];
+        
+//        NSURLSessionTask *task = [self.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+//
+//            dispatch_async(self.queue, ^{
+//                if (urlSchemeTask.request.ss_stop == NO) {
+//                    if (error) {
+//                        [urlSchemeTask didReceiveResponse:response];
+//                        [urlSchemeTask didFailWithError:error];
+//                    }else{
+//                        [urlSchemeTask didReceiveResponse:response];
+//                        [urlSchemeTask didReceiveData:data];
+//                        [urlSchemeTask didFinish];
+//                        if ([response respondsToSelector:@selector(allHeaderFields)]) {
+//                            [self handleHeaderFields:[(NSHTTPURLResponse *)response allHeaderFields] forURL:request.URL];
+//                        }
+//                    }
+//                }
+//            });
+//        }];
+//        [task resume];
     }
 }
 
@@ -193,6 +264,14 @@ static SSWKURLHandler *sharedInstance = nil;
     dispatch_async(self.queue, ^{
         urlSchemeTask.request.ss_stop = YES;
     });
+}
+
+#pragma mark - wkwebview信任https接口
+- (void)webView:(WKWebView *)webView didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler {
+    if ([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
+        NSURLCredential *card = [[NSURLCredential alloc]initWithTrust:challenge.protectionSpace.serverTrust];
+        completionHandler(NSURLSessionAuthChallengeUseCredential, card);
+    }
 }
 
 
@@ -234,6 +313,164 @@ static SSWKURLHandler *sharedInstance = nil;
     return cookieArray;
 }
 
+#pragma mark - delegate
+
+
+- (void)setDelegate:(SSWKTaskDelegate *)delegate
+            forTask:(NSURLSessionTask *)task
+{
+    [self.lock lock];
+    self.mutableTaskDelegatesKeyedByTaskIdentifier[@(task.taskIdentifier)] = delegate;
+    [self.lock unlock];
+}
+
+- (SSWKTaskDelegate *)delegateForTask:(NSURLSessionTask *)task {
+    NSParameterAssert(task);
+    SSWKTaskDelegate *delegate = nil;
+    [self.lock lock];
+    delegate = self.mutableTaskDelegatesKeyedByTaskIdentifier[@(task.taskIdentifier)];
+    [self.lock unlock];
+
+    return delegate;
+}
+
+- (void)removeDelegateForTask:(NSURLSessionTask *)task {
+    NSParameterAssert(task);
+    [self.lock lock];
+    [self.mutableTaskDelegatesKeyedByTaskIdentifier removeObjectForKey:@(task.taskIdentifier)];
+    [self.lock unlock];
+}
+
+- (void)URLSession:(NSURLSession *)session
+              task:(NSURLSessionTask *)task
+didCompleteWithError:(NSError *)error
+{
+    SSWKTaskDelegate *delegate = [self delegateForTask:task];
+    [delegate URLSession:session task:task didCompleteWithError:error];
+}
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+didBecomeDownloadTask:(NSURLSessionDownloadTask *)downloadTask
+{
+//    SSWKTaskDelegate *delegate = [self delegateForTask:task];
+    SSWKTaskDelegate *delegate = [self delegateForTask:dataTask];
+     if (delegate) {
+         [self removeDelegateForTask:dataTask];
+         [self setDelegate:delegate forTask:downloadTask];
+     }
+
+}
+
+- (void)URLSession:(NSURLSession *)session
+      dataTask:(NSURLSessionDataTask *)dataTask
+didReceiveData:(NSData *)data
+{
+    SSWKTaskDelegate *delegate = [self delegateForTask:dataTask];
+    [delegate URLSession:session dataTask:dataTask didReceiveData:data];
+}
+
+
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
+didReceiveResponse:(NSURLResponse *)response
+ completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler;
+{
+    SSWKTaskDelegate *delegate = [self delegateForTask:dataTask];
+    [delegate URLSession:session dataTask:dataTask didReceiveResponse:response completionHandler:completionHandler];
+    
+    NSURLSessionResponseDisposition disposition = NSURLSessionResponseAllow;
+    if (completionHandler) {
+        completionHandler(disposition);
+    }
+}
+
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+                        willBeginDelayedRequest:(NSURLRequest *)request
+                              completionHandler:(void (^)(NSURLSessionDelayedRequestDisposition disposition, NSURLRequest * _Nullable newRequest))completionHandler
+{
+    NSLog(@"");
+
+}
+- (void)URLSession:(NSURLSession *)session taskIsWaitingForConnectivity:(NSURLSessionTask *)task
+{
+    NSLog(@"");
+
+}
+
+- (void)URLSession:(NSURLSession *)session didBecomeInvalidWithError:(NSError *)error
+{
+    NSLog(@"");
+}
+
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+                     willPerformHTTPRedirection:(NSHTTPURLResponse *)response
+                                     newRequest:(NSURLRequest *)request
+                              completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler;
+{
+    NSLog(@"");
+    NSURLRequest *redirectRequest = request;
+    if (completionHandler) {
+         completionHandler(redirectRequest);
+     }
+}
+//- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+//                            didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
+//                              completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler;
+//{
+//    NSLog(@"");
+//
+//}
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+                              needNewBodyStream:(void (^)(NSInputStream * _Nullable bodyStream))completionHandler;
+{
+    NSLog(@"");
+}
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+                                didSendBodyData:(int64_t)bytesSent
+                                 totalBytesSent:(int64_t)totalBytesSent
+                       totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
+{
+    NSLog(@"");
+}
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didFinishCollectingMetrics:(NSURLSessionTaskMetrics *)metrics API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0));
+{
+    NSLog(@"");
+}
+
+- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
+                                didBecomeStreamTask:(NSURLSessionStreamTask *)streamTask;
+{
+    NSLog(@"");
+}
+
+
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask
+                              didFinishDownloadingToURL:(NSURL *)location;
+{
+    NSLog(@"");
+
+}
+/* Sent periodically to notify the delegate of download progress. */
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask
+                                           didWriteData:(int64_t)bytesWritten
+                                      totalBytesWritten:(int64_t)totalBytesWritten
+                              totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite;
+{
+    NSLog(@"");
+
+}
+- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask
+                                      didResumeAtOffset:(int64_t)fileOffset
+                                     expectedTotalBytes:(int64_t)expectedTotalBytes;
+{
+    NSLog(@"");
+
+}
+//}
 
 @end
 

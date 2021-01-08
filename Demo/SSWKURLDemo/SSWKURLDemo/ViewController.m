@@ -31,13 +31,13 @@
     WKUserScript *js = [[WKUserScript alloc] initWithSource:jScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
     [config.userContentController addUserScript:js];
     
-//    [config ssRegisterURLProtocol:[TPWKURLProtocol class]];
+    [config ssRegisterURLProtocol:[TPWKURLProtocol class]];
     WKWebView *wkWebView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:config];
     wkWebView.navigationDelegate = self;
     [self.view addSubview:wkWebView];
     
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://v.youku.com/v_show/id_XNDc1NDI5MzQ0OA==.html"]];
-//    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://www.bilibili.com/video/BV1rf4y1e7MD?p=2"]];
+//    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://v.youku.com/v_show/id_XNDc1NDI5MzQ0OA==.html"]];
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://www.iqiyi.com/v_1pxfxfkiehg.html?vfrm=pcw_home&vfrmblk=D&vfrmrst=712211_focus_A_image4"]];
 
     [wkWebView loadRequest:request];
     
@@ -57,7 +57,7 @@
     }
      
 //    [self.webView evaluateJavaScript:@"JSON.stringify(window.performance.timing.toJSON())" completionHandler:^(NSString * _Nullable timingStr, NSError * _Nullable error) {
-//           if (!error) {
+//           if (!error) {、
 //               self.timing = [NSJSONSerialization JSONObjectWithData:[timingStr dataUsingEncoding:NSUTF8StringEncoding]  options:NSJSONReadingMutableContainers error:nil];
 //               NSInteger before =  [self.timing[@"domainLookupStart"] integerValue] - [self.timing[@"navigationStart"] integerValue];
 //               NSInteger dnsTime =  [self.timing[@"domainLookupEnd"] integerValue] - [self.timing[@"domainLookupStart"] integerValue];

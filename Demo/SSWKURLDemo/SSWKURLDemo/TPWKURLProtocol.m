@@ -8,7 +8,7 @@
 
 #import "TPWKURLProtocol.h"
 
-@interface TPWKURLProtocol()
+@interface TPWKURLProtocol()<NSURLSessionDelegate>
 
 @property (nonatomic, strong) NSURLSessionDataTask *dataTask;
 @property (nonatomic, strong) NSURLSession         *session;
@@ -16,7 +16,7 @@
 @property (nonatomic, strong) NSData               *data;
 @property (nonatomic, strong) NSDate               *startDate;
 @property (nonatomic, strong) NSError              *error;
-
+@property (nonatomic, strong) NSOperationQueue     *queue;
 
 @end
 
@@ -43,7 +43,7 @@
 //        return YES;
 //    }
     
-    return YES;
+    return NO;
 }
 
 + (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request
@@ -62,11 +62,21 @@
     return [mutableRequest copy];
 }
 
+
+- (NSOperationQueue *)queue
+{
+    if (!_queue) {
+        _queue = [[NSOperationQueue alloc] init];
+        _queue.maxConcurrentOperationCount = 1;
+    }
+    return _queue;
+}
+
 - (NSURLSession *)session
 {
     if (!_session) {
         NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-        _session = [NSURLSession sessionWithConfiguration:config];
+        _session = [NSURLSession sessionWithConfiguration:config delegate:self delegateQueue:self.queue];
     }
     return _session;
 }
@@ -75,17 +85,21 @@
 {
     
     self.startDate  = [NSDate date];
-    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:self.request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-        completionHandler(data,response,error);
-        self.data = data;
-        self.response = response;
-        self.error = error;
-        [self finishLoading];
-    }];
+//    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:self.request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+//        completionHandler(data,response,error);
+//        self.data = data;
+//        self.response = response;
+//        self.error = error;
+//        [self finishLoading];
+//    }];
+    NSURLSessionDataTask *task = [self.session dataTaskWithRequest:self.request];
+    
     self.dataTask = task;
     [task resume];
 
 }
+
+
 
 - (void)stopLoading
 {
@@ -105,6 +119,45 @@
 
 }
 
+
+#pragma mark - delegate
+
+- (void)URLSession:(NSURLSession *)session didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable))completionHandler
+{
+    
+}
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+didReceiveResponse:(NSURLResponse *)response
+ completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler
+{
+    NSURLSessionResponseDisposition disposition = NSURLSessionResponseAllow;
+    if (completionHandler) {
+        completionHandler(disposition);
+    }
+}
+
+
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveData:(NSData *)data
+{
+
+}
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+ willCacheResponse:(NSCachedURLResponse *)proposedResponse
+ completionHandler:(void (^)(NSCachedURLResponse *cachedResponse))completionHandler
+{
+    NSCachedURLResponse *cachedResponse = proposedResponse;
+
+    if (completionHandler) {
+        completionHandler(cachedResponse);
+    }
+}
 
 
 @end
