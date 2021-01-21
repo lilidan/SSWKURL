@@ -10,7 +10,6 @@
 #import <WebKit/WebKit.h>
 
 
-
 @interface SSWKURLProtocol:NSObject
 
 @property (nonatomic,readonly,copy) NSURLRequest *request;

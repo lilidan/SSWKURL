@@ -8,7 +8,7 @@
 
 #import "ViewController.h"
 #import <WebKit/WebKit.h>
-#import "TPWKURLProtocol.h"
+#import "SSWKURL.h"
 
 @interface ViewController ()<WKNavigationDelegate,WKScriptMessageHandler,WKUIDelegate>
 
@@ -31,7 +31,7 @@
     WKUserScript *js = [[WKUserScript alloc] initWithSource:jScript injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
     [config.userContentController addUserScript:js];
     
-    [config ssRegisterURLProtocol:[TPWKURLProtocol class]];
+    [config ssRegisterURLProtocol:[SSWKURLProtocol class]];
     WKWebView *wkWebView = [[WKWebView alloc] initWithFrame:self.view.bounds configuration:config];
     wkWebView.navigationDelegate = self;
     [self.view addSubview:wkWebView];

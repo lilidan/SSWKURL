@@ -8,8 +8,9 @@
 
 #import "SSWKURL.h"
 #import <objc/runtime.h>
-
-
+#import "SSCache.h"
+#import "SSUtils.h"
+#import "SSResourceLoader.h"
 
 @interface WKWebView(handlesURLScheme)
 
@@ -91,6 +92,7 @@ didCompleteWithError:(NSError *)error
         [self.schemeTask didFailWithError:error];
     }else{
         [self.schemeTask didFinish];
+        [[SSCache sharedCache] finishRequestForRequestId:[SSUtils requestIdForRequest:task.currentRequest]];
     }
 }
 
@@ -98,7 +100,11 @@ didCompleteWithError:(NSError *)error
       dataTask:(NSURLSessionDataTask *)dataTask
 didReceiveData:(NSData *)data
 {
+    if (dataTask.state == NSURLSessionTaskStateCanceling) {
+        return;
+    }
     [self.schemeTask didReceiveData:data];
+    [[SSCache sharedCache] saveData:data forRequestId:[SSUtils requestIdForRequest:dataTask.currentRequest]];
 }
 
 
@@ -106,7 +112,15 @@ didReceiveData:(NSData *)data
 didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler;
 {
+    if (dataTask.state == NSURLSessionTaskStateCanceling) {
+        return;
+    }
     [self.schemeTask didReceiveResponse:response];
+    if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+        NSHTTPURLResponse *httpRes = (NSHTTPURLResponse *)response;
+        [[SSCache sharedCache] saveResponseHeaders:httpRes.allHeaderFields forRequestId:[SSUtils requestIdForRequest:dataTask.currentRequest]];
+
+    }
 }
 
 
@@ -231,31 +245,20 @@ static SSWKURLHandler *sharedInstance = nil;
             }];
         }
     }else{
-        NSURLSessionTask *task = [self.session dataTaskWithRequest:request];
-        SSWKTaskDelegate *delegate = [[SSWKTaskDelegate alloc] init];
-        delegate.schemeTask = urlSchemeTask;
-        [self setDelegate:delegate forTask:task];
-        [task resume];
-        
-//        NSURLSessionTask *task = [self.session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-//
-//            dispatch_async(self.queue, ^{
-//                if (urlSchemeTask.request.ss_stop == NO) {
-//                    if (error) {
-//                        [urlSchemeTask didReceiveResponse:response];
-//                        [urlSchemeTask didFailWithError:error];
-//                    }else{
-//                        [urlSchemeTask didReceiveResponse:response];
-//                        [urlSchemeTask didReceiveData:data];
-//                        [urlSchemeTask didFinish];
-//                        if ([response respondsToSelector:@selector(allHeaderFields)]) {
-//                            [self handleHeaderFields:[(NSHTTPURLResponse *)response allHeaderFields] forURL:request.URL];
-//                        }
-//                    }
-//                }
-//            });
-//        }];
-//        [task resume];
+        SSReourceItem *item = [[SSResourceLoader sharedLoader] loadResource:request];
+        if (item) {
+            [urlSchemeTask didReceiveResponse:item.response];
+            if (item.data) {
+                [urlSchemeTask didReceiveData:item.data];
+            }
+            [urlSchemeTask didFinish];
+        }else{
+             NSURLSessionTask *task = [self.session dataTaskWithRequest:request];
+             SSWKTaskDelegate *delegate = [[SSWKTaskDelegate alloc] init];
+             delegate.schemeTask = urlSchemeTask;
+             [self setDelegate:delegate forTask:task];
+             [task resume];
+        }
     }
 }
 
