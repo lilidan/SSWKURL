@@ -18,7 +18,7 @@ https://www.bilibili.com/video/BV1rf4y1e7MD?p=2
 
 Almost same with the cache in webview.But now we can control it without restriction.
 
-![image.png](https://upload-images.jianshu.io/upload_images/611240-5e603c89a084b986.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+![image.png](Demo/WechatIMG1822.png)
 
 
 
