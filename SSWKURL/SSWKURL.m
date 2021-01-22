@@ -217,48 +217,39 @@ static SSWKURLHandler *sharedInstance = nil;
     NSMutableURLRequest *mutaRequest = [request mutableCopy];
     [mutaRequest setValue:[self getRequestCookieHeaderForURL:request.URL] forHTTPHeaderField:@"Cookie"];
     request = [mutaRequest copy];
-    BOOL canInit = NO;
-    if ([self.protocolClass respondsToSelector:@selector(canInitWithRequest:)]) {
-        canInit = [self.protocolClass canInitWithRequest:urlSchemeTask.request];
+    
+    BOOL shouldCache = YES;
+    if (request.HTTPMethod && ![request.HTTPMethod.uppercaseString isEqualToString:@"GET"]) {
+        shouldCache = NO;
     }
-    if (canInit) {
-        if ([self.protocolClass respondsToSelector:@selector(canonicalRequestForRequest:)]) {
-            request = [self.protocolClass canonicalRequestForRequest:request];
-            SSWKURLProtocol *obj = [[self.protocolClass alloc] init];
-            obj.request = request;
-            [obj startLoading:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-                dispatch_async(self.queue, ^{
-                    if (urlSchemeTask.request.ss_stop == NO) {
-                        if (error) {
-                            [urlSchemeTask didReceiveResponse:response];
-                            [urlSchemeTask didFailWithError:error];
-                        }else{
-                            [urlSchemeTask didReceiveResponse:response];
-                            [urlSchemeTask didReceiveData:data];
-                            [urlSchemeTask didFinish];
-                            if ([response respondsToSelector:@selector(allHeaderFields)]) {
-                                [self handleHeaderFields:[(NSHTTPURLResponse *)response allHeaderFields] forURL:request.URL];
-                            }
-                        }
-                    }
-                });
-            }];
+    NSString *hasAjax = [request valueForHTTPHeaderField:@"X-Requested-With"];
+    if (hasAjax != nil) {
+        shouldCache = NO;
+    }
+    
+    //
+    SSReourceItem *item = [[SSResourceLoader sharedLoader] loadResource:request];
+    
+    NSDictionary *responseHeaders = [(NSHTTPURLResponse *)item.response allHeaderFields];
+    NSString *contentRange = responseHeaders[@"content-range"];
+    NSString *contentType = responseHeaders[@"Content-Type"];
+    if ([contentType isEqualToString:@"video/mp4"]) {
+        shouldCache = NO;
+    }
+    
+    if (item && shouldCache) {
+        [urlSchemeTask didReceiveResponse:item.response];
+        if (item.data) {
+            [urlSchemeTask didReceiveData:item.data];
         }
+        [urlSchemeTask didFinish];
+
     }else{
-        SSReourceItem *item = [[SSResourceLoader sharedLoader] loadResource:request];
-        if (item) {
-            [urlSchemeTask didReceiveResponse:item.response];
-            if (item.data) {
-                [urlSchemeTask didReceiveData:item.data];
-            }
-            [urlSchemeTask didFinish];
-        }else{
-             NSURLSessionTask *task = [self.session dataTaskWithRequest:request];
-             SSWKTaskDelegate *delegate = [[SSWKTaskDelegate alloc] init];
-             delegate.schemeTask = urlSchemeTask;
-             [self setDelegate:delegate forTask:task];
-             [task resume];
-        }
+         NSURLSessionTask *task = [self.session dataTaskWithRequest:request];
+         SSWKTaskDelegate *delegate = [[SSWKTaskDelegate alloc] init];
+         delegate.schemeTask = urlSchemeTask;
+         [self setDelegate:delegate forTask:task];
+         [task resume];
     }
 }
 
@@ -393,8 +384,8 @@ didReceiveResponse:(NSURLResponse *)response
                               completionHandler:(void (^)(NSURLSessionDelayedRequestDisposition disposition, NSURLRequest * _Nullable newRequest))completionHandler
 {
     NSLog(@"");
-
 }
+
 - (void)URLSession:(NSURLSession *)session taskIsWaitingForConnectivity:(NSURLSessionTask *)task
 {
     NSLog(@"");

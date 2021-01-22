@@ -37,8 +37,11 @@
     [self.view addSubview:wkWebView];
     
 //    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://v.youku.com/v_show/id_XNDc1NDI5MzQ0OA==.html"]];
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://www.iqiyi.com/v_1pxfxfkiehg.html?vfrm=pcw_home&vfrmblk=D&vfrmrst=712211_focus_A_image4"]];
+    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://www.bilibili.com/video/BV1rf4y1e7MD?p=2"]];
 
+//    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"https://www.iqiyi.com/v_1pxfxfkiehg.html?vfrm=pcw_home&vfrmblk=D&vfrmrst=712211_focus_A_image4"]];
+
+    
     [wkWebView loadRequest:request];
     
     self.webView = wkWebView;
