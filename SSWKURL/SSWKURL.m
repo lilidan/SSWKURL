@@ -378,37 +378,6 @@ didReceiveResponse:(NSURLResponse *)response
     }
 }
 
-
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
-                        willBeginDelayedRequest:(NSURLRequest *)request
-                              completionHandler:(void (^)(NSURLSessionDelayedRequestDisposition disposition, NSURLRequest * _Nullable newRequest))completionHandler
-{
-    NSLog(@"");
-}
-
-- (void)URLSession:(NSURLSession *)session taskIsWaitingForConnectivity:(NSURLSessionTask *)task
-{
-    NSLog(@"");
-
-}
-
-- (void)URLSession:(NSURLSession *)session didBecomeInvalidWithError:(NSError *)error
-{
-    NSLog(@"");
-}
-
-
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
-                     willPerformHTTPRedirection:(NSHTTPURLResponse *)response
-                                     newRequest:(NSURLRequest *)request
-                              completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler;
-{
-    NSLog(@"");
-    NSURLRequest *redirectRequest = request;
-    if (completionHandler) {
-         completionHandler(redirectRequest);
-     }
-}
 //- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
 //                            didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
 //                              completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential * _Nullable credential))completionHandler;
@@ -416,54 +385,8 @@ didReceiveResponse:(NSURLResponse *)response
 //    NSLog(@"");
 //
 //}
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
-                              needNewBodyStream:(void (^)(NSInputStream * _Nullable bodyStream))completionHandler;
-{
-    NSLog(@"");
-}
-
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
-                                didSendBodyData:(int64_t)bytesSent
-                                 totalBytesSent:(int64_t)totalBytesSent
-                       totalBytesExpectedToSend:(int64_t)totalBytesExpectedToSend;
-{
-    NSLog(@"");
-}
-
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didFinishCollectingMetrics:(NSURLSessionTaskMetrics *)metrics API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0));
-{
-    NSLog(@"");
-}
-
-- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
-                                didBecomeStreamTask:(NSURLSessionStreamTask *)streamTask;
-{
-    NSLog(@"");
-}
 
 
-- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask
-                              didFinishDownloadingToURL:(NSURL *)location;
-{
-    NSLog(@"");
-
-}
-/* Sent periodically to notify the delegate of download progress. */
-- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask
-                                           didWriteData:(int64_t)bytesWritten
-                                      totalBytesWritten:(int64_t)totalBytesWritten
-                              totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite;
-{
-    NSLog(@"");
-
-}
-- (void)URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask
-                                      didResumeAtOffset:(int64_t)fileOffset
-                                     expectedTotalBytes:(int64_t)expectedTotalBytes;
-{
-    NSLog(@"");
-
-}
 //}
 
 @end
