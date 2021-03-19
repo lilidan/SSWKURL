@@ -13,14 +13,6 @@ Intercept and cache requests of WKWebView.
 - Intercept All Requests of WKWebView.
 - Cache requests.
 
-## Perfomance
-
-TestPage: 
-https://www.bilibili.com/video/BV1rf4y1e7MD?p=2
-
-Almost same with the cache in webview.But now we can control it without restriction.
-
-![image.png](Demo/WechatIMG1822.png)
 
 
 
